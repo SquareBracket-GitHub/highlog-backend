@@ -6,7 +6,7 @@ exports.getStudentsAll = (req, res) => {
 
     db.query(query, (err, results) => {
         if (err) {
-            logger.error('Error fetching students\n' + err);
+            logger.error('Error fetching students.\n' + err);
             return res.status(500).send("Error fetching students");
         }
 
@@ -23,7 +23,7 @@ exports.getStudentByID = (req, res) => {
 
     db.query(query, [id], (err, results) => {
         if (err) {
-            logger.error('Error fetching student\n' + err);
+            logger.error('Error fetching student.\n' + err);
             return res.status(500).send("Error fetching student");
         }
 
@@ -40,7 +40,7 @@ exports.createStudent = (req, res) => {
     
     db.query(query, [username, grade, classroom, school_number], (err, results) => {
         if (err) {
-            logger.error('Error creating sutdent\n' + err)
+            logger.error('Error creating sutdent.\n' + err)
             return res.status(500).send("Error creating student");
         }
 
@@ -58,7 +58,7 @@ exports.updateStudent = (req, res) => {
     
     db.query(query, [username, grade, classroom, school_number, id], (err) => {
         if (err) {
-            logger.error('Error updating student\n' + err);
+            logger.error('Error updating student.\n' + err);
             return res.status(500).send("Error updating student");
         }
 
@@ -75,7 +75,7 @@ exports.deleteStudent = (req, res) => {
     
     db.query(query, [id], (err) => {
         if (err) {
-            logger.error('Error deleting student\n' + err);
+            logger.error('Error deleting student.\n' + err);
             return res.status(500).send("Error deleting student");
         }
 

@@ -10,7 +10,7 @@ function validate(schema, target='params') {
             }
         }
 
-        // logger.debug(`req.${target} is:` + req[target]);
+        logger.debug(`req.${target} is: ${JSON.stringify(req[target])}`);
 
         if (schema == undefined) {
             return next();

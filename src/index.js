@@ -13,8 +13,11 @@ app.get("/", (req, res) => {
     res.send("Hello. This is the backend of Highlog.");
 });
 
-const studentRoutes = require("./routes/students");
-app.use("/students", studentRoutes);
+const studentsRoutes = require("./routes/students");
+app.use("/students", studentsRoutes);
+
+const coursesRoutes = require("./routes/courses");
+app.use('/courses', coursesRoutes);
 
 app.listen(process.env.BACKEND_PORT, () => {
     logger.info(`Server is running on port ${process.env.BACKEND_PORT}!`)
