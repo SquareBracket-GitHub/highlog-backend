@@ -19,7 +19,7 @@ exports.getEnrolmentsAll = (req, res) => {
 
 exports.getEnrolmentsByStudent = (req, res) => {
     const { student_id } = req.validated.params;
-    const query = "SELECT * FROM enrolments WHERE student_idx=?";
+    const query = "SELECT * FROM enrolments WHERE student_id=?";
 
     db.query(query, [student_id], (err, results) => {
         if (err) {
@@ -53,7 +53,7 @@ exports.getEnrolmentsByCourse = (req, res) => {
 
 exports.createEnrolment = (req, res) => {
     const { student_id, course_id } = req.validated.body;
-    const query = "INSERT INTO enrolments (student_idx, course_idx) VALUES (?, ?)";
+    const query = "INSERT INTO enrolments (student_id, course_id) VALUES (?, ?)";
 
     db.query(query, [student_id, course_id], (err, results) => {
         if (err) {
@@ -71,7 +71,7 @@ exports.createEnrolment = (req, res) => {
 exports.updateEnrolment = (req, res) => {
     const { student_id, course_id } = req.validated.params;
     const { student_id: n_student_id, course_id: n_course_id } = req.validated.body;
-    const query = "UPDATE enrolments SET (student_idx, course_idx) VALUES (?, ?) WHERE student_idx=? AND course_idx=?";
+    const query = "UPDATE enrolments SET student_id = ?, course_id = ? WHERE student_id=? AND course_id=?";
 
     db.query(query, [n_student_id, n_course_id, student_id, course_id], (err, results) => {
         if (err) {
@@ -89,7 +89,7 @@ exports.updateEnrolment = (req, res) => {
 /* exports.updateEnrolmentByStudent = (req, res) => {
     const { student_id } = req.validated.params;
     const { course_id } = req.validated.body;
-    const query = "UPDATE enrolment SET (course_idx) VALUES (?) WHERE student_idx=?";
+    const query = "UPDATE enrolment SET course_id = ? WHERE student_id=?";
 
     db.query(query, [course_id, student_id], (err, results) => {
         if (err) {
@@ -107,7 +107,7 @@ exports.updateEnrolment = (req, res) => {
 exports.updateEnrolmentByCourse = (req, res) => {
     const { course_id } = req.validated.params;
     const { student_id } = req.validated.body;
-    const query = "UPDATE enrolment SET (student_idx) VALUES (?) WHERE course_idx=?";
+    const query = "UPDATE enrolment SET student_id = ? WHERE course_id=?";
 
     db.query(query, [student_id, course_id], (err, results) => {
         if (err) {
@@ -124,7 +124,7 @@ exports.updateEnrolmentByCourse = (req, res) => {
 
 exports.deleteEnrolmentByStudent = (req, res) => {
     const { student_id } = req.validated.params;
-    const query = "DELETE FROM enrolments WHERE student_idx=?";
+    const query = "DELETE FROM enrolments WHERE student_id=?";
 
     db.query(query, [student_id], (err, results) => {
         if (err) {
@@ -141,7 +141,7 @@ exports.deleteEnrolmentByStudent = (req, res) => {
 
 exports.deleteEnrolmentByCourse = (req, res) => {
     const { course_id } = req.validated.params;
-    const query = "DELETE FROM enrolments WHERE student_idx=?";
+    const query = "DELETE FROM enrolments WHERE course_id=?";
 
     db.query(query, [course_id], (err, results) => {
         if (err) {
@@ -158,9 +158,9 @@ exports.deleteEnrolmentByCourse = (req, res) => {
 
 exports.deleteEnrolment = (req, res) => {
     const { student_id, course_id } = req.validated.params;
-    const query = "DELETE FROM enrolments WHERE studnet_idx=? AND course_idx=?";
+    const query = "DELETE FROM enrolments WHERE student_id=? AND course_id=?";
 
-    db.query(query [student_id, course_id], (err, result) => {
+    db.query(query, [student_id, course_id], (err, result) => {
         if (err) {
             logger.error('Error deleting enrolment.\n' + err);
             return res.status(500).send("Error deleting enrolment");

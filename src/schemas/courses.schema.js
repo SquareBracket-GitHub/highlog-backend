@@ -15,7 +15,7 @@ const createCourseSchema = z.object({
         .string()
         .min(1)
         .max(50),
-    day: z.array(z.object({
+    days: z.array(z.object({
         day: z
             .string()
             .min(3)
@@ -36,7 +36,7 @@ const updateCourseSchema = z.object({
         .string()
         .min(1)
         .max(50),
-    day: z.array(z.object({
+    days: z.array(z.object({
         day: z
             .string()
             .min(3)

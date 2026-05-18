@@ -11,16 +11,16 @@ router.get(
     controller.getEnrolmentsAll
 );
 
-// GET /enrolments/:student_id
+// GET /enrolments/student/:student_id
 router.get(
-    '/:student_id',
+    '/student/:student_id',
     validate(s.studentIDSchema, "params"),
     controller.getEnrolmentsByStudent
 );
 
-// GET /enrolments/:course_id
+// GET /enrolments/course/:course_id
 router.get(
-    '/:course_id',
+    '/course/:course_id',
     validate(s.courseIDSchema, "params"),
     controller.getEnrolmentsByCourse
 );
@@ -32,31 +32,33 @@ router.post(
     controller.createEnrolment
 );
 
-// PUT /enrolments/:student_id/:course_id
+// PUT /enrolments/student/:student_id/course/:course_id
 router.put(
-    '/:student_id/:course_id',
+    '/student/:student_id/course/:course_id',
     validate(s.enrolmentSchema, "params"),
     validate(s.enrolmentSchema, "body"),
     controller.updateEnrolment
 );
 
-// DELETE /enrolments/:student_id
+// DELETE /enrolments/student/:student_id
 router.delete(
-    '/:student_id',
+    '/student/:student_id',
     validate(s.studentIDSchema, "params"),
     controller.deleteEnrolmentByStudent
 );
 
-// DELETE /enrolments/:course_id
+// DELETE /enrolments/course/:course_id
 router.delete(
-    '/:course_id',
+    '/course/:course_id',
     validate(s.courseIDSchema, "params"),
     controller.deleteEnrolmentByCourse
 );
 
-// DELETE /enrolments/:student_id/:course_id
+// DELETE /enrolments/student/:student_id/course/:course_id
 router.delete(
-    '/:student_id/:course_id',
+    '/student/:student_id/course/:course_id',
     validate(s.enrolmentSchema, "params"),
     controller.deleteEnrolment
 );
+
+module.exports = router;

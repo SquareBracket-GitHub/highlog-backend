@@ -1,6 +1,5 @@
-- idx를 id로 바꿀 것 (표준)
-- 일관성 맞추기 위해 endpoint.md 수정할 것 
-- index.js에서 POST 파라매터 수정
+NOTHING BUT EGGS!
 
-! students 테이블의 class를 class_no로 바꾸기
-! courses 테이블의 day는 days로
+- 일단 프론트엔드 개발 먼저
+- API로 관련 요소가 있는지에 대한 확인 함수 만들기
+- 라우트 경로 일관성 챙기기

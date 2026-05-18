@@ -15,7 +15,7 @@ const createStudentSchema = z.object({
         .coerce.number()
         .int()
         .min(1),
-    classroom: z
+    class_no: z
         .coerce.number()
         .int()
         .min(1),
@@ -34,7 +34,7 @@ const updateStudentSchema = z.object({
         .coerce.number()
         .int()
         .min(1),
-    classroom: z
+    class_no: z
         .coerce.number()
         .int()
         .min(1),
