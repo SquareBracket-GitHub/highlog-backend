@@ -1,4 +1,3 @@
-const { startTimer } = require("winston");
 const z = require("zod");
 
 const getCourseByIDSchema = z.object({

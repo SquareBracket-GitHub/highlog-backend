@@ -19,6 +19,9 @@ app.use("/students", studentsRoutes);
 const coursesRoutes = require("./routes/courses");
 app.use('/courses', coursesRoutes);
 
+const enrolmentsRoutes = require("./routes/enrolments");
+app.use('/enrolments', enrolmentsRoutes);
+
 app.listen(process.env.BACKEND_PORT, () => {
     logger.info(`Server is running on port ${process.env.BACKEND_PORT}!`)
 });
