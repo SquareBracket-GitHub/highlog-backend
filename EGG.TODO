@@ -1,5 +1,6 @@
 NOTHING BUT EGGS!
 
 - 일단 프론트엔드 개발 먼저
+! students 테이블에 username (원래 username은 name으로 이전), password 추가
 - API로 관련 요소가 있는지에 대한 확인 함수 만들기
 - 라우트 경로 일관성 챙기기
