@@ -32,6 +32,7 @@
         {
             id,
             username,
+            login_id,
             grade,
             class_no,
             school_number
@@ -54,6 +55,7 @@
     data: {
         id,
         username,
+        login_id,
         grade,
         class_no,
         school_number
@@ -66,6 +68,8 @@
 ```json
 {
     username,
+    login_id,
+    password,
     grade,
     class_no,
     school_number
@@ -78,6 +82,7 @@
     data: {
         id,
         username,
+        login_id,
         grade,
         class_no,
         school_number
@@ -96,6 +101,8 @@
 ```json
 {
     username,
+    login_id,
+    password,
     grade,
     class_no,
     school_number
@@ -108,6 +115,7 @@
     data: {
         id,
         username,
+        login_id,
         grade,
         class_no,
         school_number

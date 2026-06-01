@@ -2,7 +2,7 @@ const db = require("../models/db");
 const logger = require("../utils/logger");
 
 exports.getStudentsAll = (req, res) => {
-    const query = "SELECT * FROM students";
+    const query = "SELECT id, username, login_id, grade, class_no, school_number FROM students";
 
     db.query(query, (err, results) => {
         if (err) {
@@ -19,7 +19,7 @@ exports.getStudentsAll = (req, res) => {
 
 exports.getStudentByID = (req, res) => {
     const id = req.validated.params.id;
-    const query = "SELECT * FROM students WHERE id = ?";
+    const query = "SELECT id, username, login_id, grade, class_no, school_number FROM students WHERE id = ?";
 
     db.query(query, [id], (err, results) => {
         if (err) {
@@ -35,28 +35,28 @@ exports.getStudentByID = (req, res) => {
 }
 
 exports.createStudent = (req, res) => {
-    const { username, grade, class_no, school_number } = req.validated.body;
-    const query = "INSERT INTO students (username, grade, class_no, school_number) VALUES (?, ?, ?, ?)";
+    const { username, login_id, password, grade, class_no, school_number } = req.validated.body;
+    const query = "INSERT INTO students (username, login_id, password, grade, class_no, school_number) VALUES (?, ?, ?, ?, ?, ?)";
     
-    db.query(query, [username, grade, class_no, school_number], (err, results) => {
+    db.query(query, [username, login_id, password, grade, class_no, school_number], (err, results) => {
         if (err) {
-            logger.error('Error creating sutdent.\n' + err)
+            logger.error('Error creating student.\n' + err)
             return res.status(500).send("Error creating student");
         }
 
         res.json({
             result: "SUCCESS",
-            data: { id: results.insertId, username, grade, class_no, school_number }
+            data: { id: results.insertId, username, login_id, grade, class_no, school_number }
         });
     });
 }
 
 exports.updateStudent = (req, res) => {
     const id = req.validated.params.id;
-    const { username, grade, class_no, school_number } = req.validated.body;
-    const query = "UPDATE students SET username = ?, grade = ?, class_no = ?, school_number = ? WHERE id = ?";
+    const { username, login_id, password, grade, class_no, school_number } = req.validated.body;
+    const query = "UPDATE students SET username = ?, login_id = ?, password = ?, grade = ?, class_no = ?, school_number = ? WHERE id = ?";
     
-    db.query(query, [username, grade, class_no, school_number, id], (err) => {
+    db.query(query, [username, login_id, password, grade, class_no, school_number, id], (err) => {
         if (err) {
             logger.error('Error updating student.\n' + err);
             return res.status(500).send("Error updating student");
@@ -64,7 +64,7 @@ exports.updateStudent = (req, res) => {
 
         res.json({
             result: "SUCCESS",
-            data: { id, username, grade, class_no, school_number }
+            data: { id, username, login_id, grade, class_no, school_number }
         });
     });
 }
