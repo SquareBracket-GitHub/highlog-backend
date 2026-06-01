@@ -22,6 +22,6 @@ app.use('/api/courses', coursesRoutes);
 const enrolmentsRoutes = require("./routes/enrolments");
 app.use('/api/enrolments', enrolmentsRoutes);
 
-app.listen(process.env.BACKEND_PORT, () => {
+app.listen(process.env.BACKEND_PORT, "0.0.0.0", () => {
     logger.info(`Server is running on port ${process.env.BACKEND_PORT}!`)
 });

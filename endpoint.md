@@ -32,6 +32,7 @@
         {
             id,
             username,
+            login_id,
             grade,
             class_no,
             school_number
@@ -54,6 +55,7 @@
     data: {
         id,
         username,
+        login_id,
         grade,
         class_no,
         school_number
