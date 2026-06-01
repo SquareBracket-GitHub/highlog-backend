@@ -11,6 +11,14 @@ const createStudentSchema = z.object({
         .string()
         .min(1)
         .max(10),
+    login_id: z
+        .string()
+        .min(1)
+        .max(50),
+    password: z
+        .string()
+        .min(1)
+        .max(255),
     grade: z
         .coerce.number()
         .int()
@@ -30,6 +38,16 @@ const updateStudentSchema = z.object({
         .string()
         .min(1)
         .max(10),
+    login_id: z
+        .string()
+        .min(1)
+        .max(50)
+        .optional(),
+    password: z
+        .string()
+        .min(1)
+        .max(255)
+        .optional(),
     grade: z
         .coerce.number()
         .int()
