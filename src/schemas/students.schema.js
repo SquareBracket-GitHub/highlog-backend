@@ -17,7 +17,7 @@ const createStudentSchema = z.object({
         .max(50),
     password: z
         .string()
-        .min(6)
+        .min()
         .max(255),
     grade: z
         .coerce.number()
@@ -44,7 +44,7 @@ const updateStudentSchema = z.object({
         .max(50),
     password: z
         .string()
-        .min(6)
+        .min(1)
         .max(255),
     grade: z
         .coerce.number()
