@@ -5,9 +5,6 @@ const validate = require("../middlewares/validate");
 const s = require("../schemas/students.schema");
 const logger = require("../utils/logger");
 
-logger.debug('validate is ' + typeof validate);
-logger.debug('controller.getStudentsAll is ' + typeof controller.getStudentsAll);
-
 // GET /students
 router.get(
     '/',

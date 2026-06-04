@@ -13,6 +13,9 @@ app.get("/api", (req, res) => {
     res.send("Hello. This is the backend of Highlog.");
 });
 
+const requrestLogger = require("./middlewares/requestLogger");
+app.use(requrestLogger);
+
 const studentsRoutes = require("./routes/students");
 app.use("/api/students", studentsRoutes);
 
