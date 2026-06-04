@@ -41,11 +41,13 @@ const updateStudentSchema = z.object({
     login_id: z
         .string()
         .min(1)
-        .max(50),
+        .max(50)
+        .optional(),
     password: z
         .string()
         .min(1)
-        .max(255),
+        .max(255)
+        .optional(),
     grade: z
         .coerce.number()
         .int()

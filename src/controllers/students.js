@@ -54,9 +54,35 @@ exports.createStudent = (req, res) => {
 exports.updateStudent = (req, res) => {
     const id = req.validated.params.id;
     const { username, login_id, password, grade, class_no, school_number } = req.validated.body;
+<<<<<<< HEAD
+
+    const updates = [
+        'username = ?',
+        'grade = ?',
+        'class_no = ?',
+        'school_number = ?'
+    ];
+    const values = [username, grade, class_no, school_number];
+
+    if (login_id !== undefined) {
+        updates.push('login_id = ?');
+        values.push(login_id);
+    }
+
+    if (password !== undefined) {
+        updates.push('password = ?');
+        values.push(password);
+    }
+
+    const query = `UPDATE students SET ${updates.join(', ')} WHERE id = ?`;
+    values.push(id);
+    
+    db.query(query, values, (err) => {
+=======
     const query = "UPDATE students SET username = ?, login_id = ?, password = ?, grade = ?, class_no = ?, school_number = ? WHERE id = ?";
     
     db.query(query, [username, login_id, password, grade, class_no, school_number, id], (err) => {
+>>>>>>> 8bc5d64991d1f11a2cc33f307616400674aba525
         if (err) {
             logger.error('Error updating student.\n' + err);
             return res.status(500).send("Error updating student");

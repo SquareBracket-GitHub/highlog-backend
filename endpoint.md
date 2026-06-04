@@ -2,26 +2,26 @@
 ## Quick Reference
 |Method|URI|Description|
 |:---:|:---:|:---|
-|GET|/students|Get all students|
-|GET|/students/:id|Get student by student ID|
-|POST|/students|Create student|
-|PUT|/students/:id|Update student information|
-|DELETE|/students/:id|Delete student|
-|GET|/courses|Get all courses|
-|GET|/courses|Get course by course ID|
-|POST|/courses|Create course|
-|PUT|/courses/:id|Update course information|
-|DELETE|/courses/:id|Delete course|
-|GET|/enrolments|Get all enrolments|
-|GET|/enrolments/student/:student_id|Get enrolments by student ID|
-|GET|/enrolments/course/:course_id|Get enrolments by course ID|
-|POST|/enrolments|Create enrolment|
-|PUT|/enrolments/student/:student_id/course/:course_id|Update enrolments information|
-|DELETE|/enrolments/student/:student_id|Delete enrolments by student ID|
-|DELETE|/enrolments/course/:course_id|Delete enrolments by course ID|
-|DELETE|/enrolments/student/:student_id/course/:course_id|Delete enrolment|
+|GET|/api/students|Get all students|
+|GET|/api/students/:id|Get student by student ID|
+|POST|/api/students|Create student|
+|PUT|/api/students/:id|Update student information|
+|DELETE|/api/students/:id|Delete student|
+|GET|/api/courses|Get all courses|
+|GET|/api/courses|Get course by course ID|
+|POST|/api/courses|Create course|
+|PUT|/api/courses/:id|Update course information|
+|DELETE|/api/courses/:id|Delete course|
+|GET|/api/enrolments|Get all enrolments|
+|GET|/api/enrolments/student/:student_id|Get enrolments by student ID|
+|GET|/api/enrolments/course/:course_id|Get enrolments by course ID|
+|POST|/api/enrolments|Create enrolment|
+|PUT|/api/enrolments/student/:student_id/course/:course_id|Update enrolments information|
+|DELETE|/api/enrolments/student/:student_id|Delete enrolments by student ID|
+|DELETE|/api/enrolments/course/:course_id|Delete enrolments by course ID|
+|DELETE|/api/enrolments/student/:student_id/course/:course_id|Delete enrolment|
 - - -
-## /students
+## /api/students
 
 ### `GET` /students
 **RES** JSON
@@ -141,7 +141,7 @@
 ```
 
 - - -
-## /courses
+## /api/courses
 
 ### `GET` /courses
 **RES** JSON
@@ -256,7 +256,7 @@
 ```
 
 - - -
-## /enrolments
+## /api/enrolments
 
 ### `GET` /enrolments
 **RES** JSON
