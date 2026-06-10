@@ -27,7 +27,7 @@ const createCourseSchema = z.object({
     })),
     category: z
         .string()
-        .min(1)
+        .min(0)
         .max(20)
 });
 
