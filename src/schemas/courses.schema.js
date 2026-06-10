@@ -24,7 +24,11 @@ const createCourseSchema = z.object({
             .coerce.number()
             .int()
             .min(1)
-    }))
+    })),
+    category: z
+        .string()
+        .min(1)
+        .max(20)
 });
 
 const updateCourseSchema = z.object({

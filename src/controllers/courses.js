@@ -35,10 +35,10 @@ exports.getCourseByID = (req, res) => {
 }
 
 exports.createCourse = (req, res) => {
-    const query = "INSERT INTO courses (title, classroom, days) VALUES (?, ?, ?)";
-    const { title, classroom, days } = req.validated.body;
+    const query = "INSERT INTO courses (title, classroom, days, category) VALUES (?, ?, ?, ?)";
+    const { title, classroom, days, category } = req.validated.body;
 
-    db.query(query, [title, classroom, JSON.stringify(days)], (err, results) => {
+    db.query(query, [title, classroom, JSON.stringify(days), category], (err, results) => {
         if (err) {
             logger.error('Error creating course.\n' + err);
             return res.status(500).send("Error creating course")
@@ -46,17 +46,17 @@ exports.createCourse = (req, res) => {
 
         res.json({
             result: "SUCCESS",
-            data: { id: results.insertId, title, classroom, days }
+            data: { id: results.insertId, title, classroom, days, category }
         });
     });
 }
 
 exports.updateCourse = (req, res) => {
-    const query = "UPDATE courses SET title = ?, classroom = ?, days = ? WHERE id=?";
+    const query = "UPDATE courses SET title = ?, classroom = ?, days = ?, category = ? WHERE id=?";
     const { id } = req.validated.params;
-    const { title, classroom, days } = req.validated.body;
+    const { title, classroom, days, category } = req.validated.body;
 
-    db.query(query, [title, classroom, JSON.stringify(days), id], (err, results) => {
+    db.query(query, [title, classroom, JSON.stringify(days), category, id], (err, results) => {
         if (err) {
             logger.error('Error updating course.\n' + err);
             return res.status(500).send('Error updating course');
@@ -64,7 +64,7 @@ exports.updateCourse = (req, res) => {
 
         res.json({
             result: "SUCCESS",
-            data: { id, title, classroom, days }
+            data: { id, title, classroom, days, category }
         });
     });
 }
