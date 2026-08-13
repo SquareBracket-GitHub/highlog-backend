@@ -8,14 +8,14 @@ const validate = require("../middlewares/validate");
 router.get(
     '/',
     validate(),
-    controller.getCoursesAll
+    controller.listCourses
 );
 
 // GET /courses/:id
 router.get(
     '/:id',
-    validate(s.getCourseByIDSchema, "params"),
-    controller.getCourseByID
+    validate(s.courseIdParamsSchema, "params"),
+    controller.getCourseById
 );
 
 // POST /courses
@@ -28,7 +28,7 @@ router.post(
 // PUT /courses
 router.put(
     '/:id',
-    validate(s.getCourseByIDSchema, "params"),
+    validate(s.courseIdParamsSchema, "params"),
     validate(s.createCourseSchema, "body"),
     controller.updateCourse
 );

@@ -1,6 +1,6 @@
 const { z } = require("zod");
 
-const getStudentsByIDSchema = z.object({
+const studentIdParamsSchema = z.object({
     id: z.
         string()
         .min(1)
@@ -11,15 +11,24 @@ const createStudentSchema = z.object({
         .string()
         .min(1)
         .max(10),
+    loginId: z
+        .string()
+        .trim()
+        .min(3)
+        .max(50),
+    password: z
+        .string()
+        .min(8)
+        .max(128),
     grade: z
         .coerce.number()
         .int()
         .min(1),
-    class_no: z
+    classNo: z
         .coerce.number()
         .int()
         .min(1),
-    school_number: z
+    schoolNumber: z
         .coerce.number()
         .int()
         .min(1)
@@ -34,11 +43,11 @@ const updateStudentSchema = z.object({
         .coerce.number()
         .int()
         .min(1),
-    class_no: z
+    classNo: z
         .coerce.number()
         .int()
         .min(1),
-    school_number: z
+    schoolNumber: z
         .coerce.number()
         .int()
         .min(1)
@@ -53,7 +62,7 @@ const deleteStudentSchema = z.object({
 
 
 module.exports = {
-    getStudentsByIDSchema,
+    studentIdParamsSchema,
     createStudentSchema,
     updateStudentSchema,
     deleteStudentSchema

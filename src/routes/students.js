@@ -6,33 +6,26 @@ const s = require("../schemas/students.schema");
 const logger = require("../utils/logger");
 
 logger.debug('validate is ' + typeof validate);
-logger.debug('controller.getStudentsAll is ' + typeof controller.getStudentsAll);
+logger.debug('controller.listStudents is ' + typeof controller.listStudents);
 
 // GET /students
 router.get(
     '/',
     validate(),
-    controller.getStudentsAll
+    controller.listStudents
 );
 
 // GET /students/:id
 router.get(
     '/:id',
-    validate(s.getStudentsByIDSchema, 'params'),
-    controller.getStudentByID
-);
-
-// POST /students
-router.post(
-    '/',
-    validate(s.createStudentSchema, 'body'),
-    controller.createStudent
+    validate(s.studentIdParamsSchema, 'params'),
+    controller.getStudentById
 );
 
 // PUT /students/:id
 router.put(
     '/:id',
-    validate(s.getStudentsByIDSchema, 'params'),
+    validate(s.studentIdParamsSchema, 'params'),
     validate(s.updateStudentSchema, 'body'),
     controller.updateStudent
 );

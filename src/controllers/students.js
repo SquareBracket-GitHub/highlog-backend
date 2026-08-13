@@ -1,8 +1,21 @@
 const db = require("../models/db");
 const logger = require("../utils/logger");
+const { hashPassword } = require("../utils/password");
+const { createToken } = require("../utils/token");
 
-exports.getStudentsAll = (req, res) => {
-    const query = "SELECT * FROM students";
+const PUBLIC_COLUMNS = "id, username, login_id, grade, class_no, school_number";
+
+const toStudentDto = ({ id, username, login_id, grade, class_no, school_number }) => ({
+    id,
+    username,
+    loginId: login_id,
+    grade,
+    classNo: class_no,
+    schoolNumber: school_number
+});
+
+exports.listStudents = (req, res) => {
+    const query = `SELECT ${PUBLIC_COLUMNS} FROM students`;
 
     db.query(query, (err, results) => {
         if (err) {
@@ -12,14 +25,14 @@ exports.getStudentsAll = (req, res) => {
 
         res.json({
             result: "SUCCESS",
-            data: results
+            data: results.map(toStudentDto)
         });
     });
 }
 
-exports.getStudentByID = (req, res) => {
+exports.getStudentById = (req, res) => {
     const id = req.validated.params.id;
-    const query = "SELECT * FROM students WHERE id = ?";
+    const query = `SELECT ${PUBLIC_COLUMNS} FROM students WHERE id = ?`;
 
     db.query(query, [id], (err, results) => {
         if (err) {
@@ -29,34 +42,39 @@ exports.getStudentByID = (req, res) => {
 
         res.json({
             result: "SUCCESS",
-            data: results[0]
+            data: results[0] ? toStudentDto(results[0]) : null
         });
     });
 }
 
-exports.createStudent = (req, res) => {
-    const { username, grade, class_no, school_number } = req.validated.body;
-    const query = "INSERT INTO students (username, grade, class_no, school_number) VALUES (?, ?, ?, ?)";
+exports.createStudent = async (req, res) => {
+    const { username, loginId, password, grade, classNo, schoolNumber } = req.validated.body;
+    const passwordHash = await hashPassword(password);
+    const query = "INSERT INTO students (username, login_id, password, grade, class_no, school_number) VALUES (?, ?, ?, ?, ?, ?)";
     
-    db.query(query, [username, grade, class_no, school_number], (err, results) => {
+    db.query(query, [username, loginId, passwordHash, grade, classNo, schoolNumber], (err, results) => {
         if (err) {
-            logger.error('Error creating sutdent.\n' + err)
-            return res.status(500).send("Error creating student");
+            logger.error('Error creating student.\n' + err)
+            if (err.code === "ER_DUP_ENTRY") {
+                return res.status(409).json({ result: "ERROR", error: "Login ID already exists" });
+            }
+            return res.status(500).json({ result: "ERROR", error: "Error creating student" });
         }
 
-        res.json({
+        const student = { id: results.insertId, username, loginId, grade, classNo, schoolNumber };
+        res.status(201).json({
             result: "SUCCESS",
-            data: { id: results.insertId, username, grade, class_no, school_number }
+            data: { student, token: createToken(student.id) }
         });
     });
 }
 
 exports.updateStudent = (req, res) => {
     const id = req.validated.params.id;
-    const { username, grade, class_no, school_number } = req.validated.body;
+    const { username, grade, classNo, schoolNumber } = req.validated.body;
     const query = "UPDATE students SET username = ?, grade = ?, class_no = ?, school_number = ? WHERE id = ?";
     
-    db.query(query, [username, grade, class_no, school_number, id], (err) => {
+    db.query(query, [username, grade, classNo, schoolNumber, id], (err) => {
         if (err) {
             logger.error('Error updating student.\n' + err);
             return res.status(500).send("Error updating student");
@@ -64,7 +82,7 @@ exports.updateStudent = (req, res) => {
 
         res.json({
             result: "SUCCESS",
-            data: { id, username, grade, class_no, school_number }
+            data: { id: Number(id), username, grade, classNo, schoolNumber }
         });
     });
 }
@@ -81,7 +99,7 @@ exports.deleteStudent = (req, res) => {
 
         res.json({
             result: "SUCCESS",
-            data: { id }
+            data: { id: Number(id) }
         });
     });
 }

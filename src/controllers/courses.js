@@ -1,7 +1,7 @@
 const db = require("../models/db");
 const logger = require("../utils/logger");
 
-exports.getCoursesAll = (req, res) => {
+exports.listCourses = (req, res) => {
     const query = "SELECT * FROM courses";
 
     db.query(query, (err, results) => {
@@ -17,7 +17,7 @@ exports.getCoursesAll = (req, res) => {
     });
 }
 
-exports.getCourseByID = (req, res) => {
+exports.getCourseById = (req, res) => {
     const query = "SELECT * FROM courses WHERE id=?";
     const { id } = req.validated.params;
 
@@ -35,10 +35,10 @@ exports.getCourseByID = (req, res) => {
 }
 
 exports.createCourse = (req, res) => {
-    const query = "INSERT INTO courses (title, classroom, days) VALUES (?, ?, ?)";
-    const { title, classroom, days } = req.validated.body;
+    const query = "INSERT INTO courses (title, tag, classroom, days) VALUES (?, ?, ?, ?)";
+    const { title, tag, classroom, days } = req.validated.body;
 
-    db.query(query, [title, classroom, JSON.stringify(days)], (err, results) => {
+    db.query(query, [title, tag, classroom, JSON.stringify(days)], (err, results) => {
         if (err) {
             logger.error('Error creating course.\n' + err);
             return res.status(500).send("Error creating course")
@@ -46,17 +46,17 @@ exports.createCourse = (req, res) => {
 
         res.json({
             result: "SUCCESS",
-            data: { id: results.insertId, title, classroom, days }
+            data: { id: results.insertId, title, tag, classroom, days }
         });
     });
 }
 
 exports.updateCourse = (req, res) => {
-    const query = "UPDATE courses SET title = ?, classroom = ?, days = ? WHERE id=?";
+    const query = "UPDATE courses SET title = ?, tag = ?, classroom = ?, days = ? WHERE id=?";
     const { id } = req.validated.params;
-    const { title, classroom, days } = req.validated.body;
+    const { title, tag, classroom, days } = req.validated.body;
 
-    db.query(query, [title, classroom, JSON.stringify(days), id], (err, results) => {
+    db.query(query, [title, tag, classroom, JSON.stringify(days), id], (err, results) => {
         if (err) {
             logger.error('Error updating course.\n' + err);
             return res.status(500).send('Error updating course');
@@ -64,7 +64,7 @@ exports.updateCourse = (req, res) => {
 
         res.json({
             result: "SUCCESS",
-            data: { id, title, classroom, days }
+            data: { id, title, tag, classroom, days }
         });
     });
 }

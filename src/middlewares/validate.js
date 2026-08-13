@@ -21,7 +21,7 @@ function validate(schema, target='params') {
         if (!result.success) {
             logger.warn('Validation failed.');
             return res.status(400).json({
-                error: result.error.errors
+                error: result.error.issues
             });
         }
 

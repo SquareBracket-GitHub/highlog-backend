@@ -1,32 +1,32 @@
 const { z } = require("zod");
 
-const studentIDSchema = z.object({
-    student_id: z
+const studentIdParamsSchema = z.object({
+    studentId: z
         .coerce.number()
         .int()
         .min(1)
 });
 
-const courseIDSchema = z.object({
-    course_id: z
+const courseIdParamsSchema = z.object({
+    courseId: z
         .coerce.number()
         .int()
         .min(1)
 });
 
 const enrolmentSchema = z.object({
-    student_id: z
+    studentId: z
         .coerce.number()
         .int()
         .min(1),
-    course_id: z
+    courseId: z
         .coerce.number()
         .int()
         .min(1)
 });
 
 module.exports = {
-    studentIDSchema,
-    courseIDSchema,
+    studentIdParamsSchema,
+    courseIdParamsSchema,
     enrolmentSchema
 };

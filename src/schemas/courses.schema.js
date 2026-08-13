@@ -1,6 +1,6 @@
 const z = require("zod");
 
-const getCourseByIDSchema = z.object({
+const courseIdParamsSchema = z.object({
     id: z
         .string()
         .min(1)
@@ -15,6 +15,11 @@ const createCourseSchema = z.object({
         .string()
         .min(1)
         .max(50),
+    tag: z
+        .string()
+        .trim()
+        .min(1)
+        .max(30),
     days: z.array(z.object({
         day: z
             .string()
@@ -36,6 +41,11 @@ const updateCourseSchema = z.object({
         .string()
         .min(1)
         .max(50),
+    tag: z
+        .string()
+        .trim()
+        .min(1)
+        .max(30),
     days: z.array(z.object({
         day: z
             .string()
@@ -55,7 +65,7 @@ const deleteCourseSchema = z.object({
 });
 
 module.exports = {
-    getCourseByIDSchema,
+    courseIdParamsSchema,
     createCourseSchema,
     updateCourseSchema,
     deleteCourseSchema

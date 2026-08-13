@@ -1,4 +1,11 @@
 # API Specification
+
+> 2026-08-11 기준 모든 업무 API의 base path는 `/api`이며 Bearer token이 필요합니다.
+> 회원가입은 `POST /api/auth/register`, 로그인은 `POST /api/auth/login`입니다.
+> 과목의 선택 그룹 필드는 `category`가 아니라 `tag`입니다.
+> `GET /api/class-timetables/me`는 로그인 학생의 학년/반 시간표 틀을 반환합니다.
+> `POST /api/enrolments`는 같은 tag의 기존 수강을 새 과목으로 교체합니다.
+
 ## Quick Reference
 |Method|URI|Description|
 |:---:|:---:|:---|
@@ -20,6 +27,7 @@
 |DELETE|/enrolments/student/:student_id|Delete enrolments by student ID|
 |DELETE|/enrolments/course/:course_id|Delete enrolments by course ID|
 |DELETE|/enrolments/student/:student_id/course/:course_id|Delete enrolment|
+|GET|/class-timetables/me|Get the authenticated student's class timetable template|
 - - -
 ## /students
 

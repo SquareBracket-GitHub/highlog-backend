@@ -1,7 +1,21 @@
 const db = require("../models/db");
 const logger = require("../utils/logger");
 
-exports.getEnrolmentsAll = (req, res) => {
+function ownsStudent(req, studentId) {
+    return Number(req.auth.studentId) === Number(studentId);
+}
+
+function forbidden(res) {
+    return res.status(403).json({ result: "ERROR", error: "Cannot modify another student's enrolments" });
+}
+
+const toEnrolmentDto = ({ student_id, course_id, tag }) => ({
+    studentId: student_id,
+    courseId: course_id,
+    ...(tag === undefined ? {} : { tag })
+});
+
+exports.listEnrolments = (req, res) => {
     const query = "SELECT * FROM enrolments";
 
     db.query(query, (err, results) => {
@@ -12,16 +26,17 @@ exports.getEnrolmentsAll = (req, res) => {
 
         res.json({
             result: "SUCCESS",
-            data: results
+            data: results.map(toEnrolmentDto)
         });
     });
 }
 
 exports.getEnrolmentsByStudent = (req, res) => {
-    const { student_id } = req.validated.params;
+    const { studentId } = req.validated.params;
+    if (!ownsStudent(req, studentId)) return forbidden(res);
     const query = "SELECT * FROM enrolments WHERE student_id=?";
 
-    db.query(query, [student_id], (err, results) => {
+    db.query(query, [studentId], (err, results) => {
         if (err) {
             logger.error('Error fetching enrolment.\n' + err);
             return res.status(500).send("Error fetching enrolment");
@@ -29,16 +44,16 @@ exports.getEnrolmentsByStudent = (req, res) => {
 
         res.json({
             result: "SUCCESS",
-            data: results
+            data: results.map(toEnrolmentDto)
         });
     });
 }
 
 exports.getEnrolmentsByCourse = (req, res) => {
-    const { course_id } = req.validated.params;
+    const { courseId } = req.validated.params;
     const query = "SELECT * FROM enrolments WHERE course_id=?";
 
-    db.query(query, [course_id], (err, results) => {
+    db.query(query, [courseId], (err, results) => {
         if (err) {
             logger.error('Error fetching enrolment.\n' + err);
             return res.status(500).send("Error fetching enrolment");
@@ -46,34 +61,83 @@ exports.getEnrolmentsByCourse = (req, res) => {
 
         res.json({
             result: "SUCCESS",
-            data: results
+            data: results.map(toEnrolmentDto)
         });
     });
 }
 
 exports.createEnrolment = (req, res) => {
-    const { student_id, course_id } = req.validated.body;
-    const query = "INSERT INTO enrolments (student_id, course_id) VALUES (?, ?)";
+    const { studentId, courseId } = req.validated.body;
+    if (!ownsStudent(req, studentId)) return forbidden(res);
 
-    db.query(query, [student_id, course_id], (err, results) => {
-        if (err) {
-            logger.error('Error creating enrolment.\n' + err);
-            return res.status(500).send("Error creating enrolment");
+    db.beginTransaction((transactionErr) => {
+        if (transactionErr) {
+            logger.error('Error starting enrolment transaction.\n' + transactionErr);
+            return res.status(500).json({ result: "ERROR", error: "Error creating enrolment" });
         }
 
-        res.json({
-            result: "SUCCESS",
-            data: { student_id, course_id }
+        db.query("SELECT tag FROM courses WHERE id = ? FOR UPDATE", [courseId], (courseErr, courses) => {
+            if (courseErr || courses.length === 0) {
+                return db.rollback(() => {
+                    if (courseErr) logger.error('Error fetching course tag.\n' + courseErr);
+                    res.status(courseErr ? 500 : 404).json({
+                        result: "ERROR",
+                        error: courseErr ? "Error creating enrolment" : "Course not found"
+                    });
+                });
+            }
+
+            const tag = courses[0].tag;
+            const deleteSameTag = `
+                DELETE enrolments
+                FROM enrolments
+                JOIN courses ON courses.id = enrolments.course_id
+                WHERE enrolments.student_id = ? AND courses.tag = ?
+            `;
+
+            db.query(deleteSameTag, [studentId, tag], (deleteErr) => {
+                if (deleteErr) {
+                    return db.rollback(() => {
+                        logger.error('Error replacing same-tag enrolment.\n' + deleteErr);
+                        res.status(500).json({ result: "ERROR", error: "Error creating enrolment" });
+                    });
+                }
+
+                db.query(
+                    "INSERT INTO enrolments (student_id, course_id) VALUES (?, ?)",
+                    [studentId, courseId],
+                    (insertErr) => {
+                        if (insertErr) {
+                            return db.rollback(() => {
+                                logger.error('Error creating enrolment.\n' + insertErr);
+                                res.status(500).json({ result: "ERROR", error: "Error creating enrolment" });
+                            });
+                        }
+
+                        db.commit((commitErr) => {
+                            if (commitErr) {
+                                return db.rollback(() => {
+                                    logger.error('Error committing enrolment.\n' + commitErr);
+                                    res.status(500).json({ result: "ERROR", error: "Error creating enrolment" });
+                                });
+                            }
+
+                            res.status(201).json({ result: "SUCCESS", data: { studentId, courseId, tag } });
+                        });
+                    }
+                );
+            });
         });
     });
 }
 
 exports.updateEnrolment = (req, res) => {
-    const { student_id, course_id } = req.validated.params;
-    const { student_id: n_student_id, course_id: n_course_id } = req.validated.body;
+    const { studentId, courseId } = req.validated.params;
+    const { studentId: newStudentId, courseId: newCourseId } = req.validated.body;
+    if (!ownsStudent(req, studentId) || !ownsStudent(req, newStudentId)) return forbidden(res);
     const query = "UPDATE enrolments SET student_id = ?, course_id = ? WHERE student_id=? AND course_id=?";
 
-    db.query(query, [n_student_id, n_course_id, student_id, course_id], (err, results) => {
+    db.query(query, [newStudentId, newCourseId, studentId, courseId], (err) => {
         if (err) {
             logger.error('Error creating enrolment.\n' + err);
             return res.status(500).send("Error creating enrolment");
@@ -81,52 +145,17 @@ exports.updateEnrolment = (req, res) => {
 
         res.json({
             result: "SUCCESS",
-            data: { n_student_id, n_course_id }
+            data: { studentId: newStudentId, courseId: newCourseId }
         });
     });
 }
-
-/* exports.updateEnrolmentByStudent = (req, res) => {
-    const { student_id } = req.validated.params;
-    const { course_id } = req.validated.body;
-    const query = "UPDATE enrolment SET course_id = ? WHERE student_id=?";
-
-    db.query(query, [course_id, student_id], (err, results) => {
-        if (err) {
-            logger.error('Error updating enrolment.\n' + err);
-            return res.status(500).send("Error updating enrolment");
-        }
-
-        res.json({
-            result: "SUCCESS",
-            data: { student_id, course_id }
-        });
-    });
-}
-
-exports.updateEnrolmentByCourse = (req, res) => {
-    const { course_id } = req.validated.params;
-    const { student_id } = req.validated.body;
-    const query = "UPDATE enrolment SET student_id = ? WHERE course_id=?";
-
-    db.query(query, [student_id, course_id], (err, results) => {
-        if (err) {
-            logger.error('Error updating enrolment.\n' + err);
-            return res.status(500).send("Error updating enrolment");
-        }
-
-        res.json({
-            result: "SUCCESS",
-            data: { student_id, course_id }
-        });
-    });
-} **/
 
 exports.deleteEnrolmentByStudent = (req, res) => {
-    const { student_id } = req.validated.params;
+    const { studentId } = req.validated.params;
+    if (!ownsStudent(req, studentId)) return forbidden(res);
     const query = "DELETE FROM enrolments WHERE student_id=?";
 
-    db.query(query, [student_id], (err, results) => {
+    db.query(query, [studentId], (err) => {
         if (err) {
             logger.error('Error deleting enrolment.\n' + err);
             return res.status(500).send("Error deleting enrolment");
@@ -134,16 +163,16 @@ exports.deleteEnrolmentByStudent = (req, res) => {
 
         res.json({
             result: "SUCCESS",
-            data: { student_id }
+            data: { studentId }
         });
     });
 }
 
 exports.deleteEnrolmentByCourse = (req, res) => {
-    const { course_id } = req.validated.params;
+    const { courseId } = req.validated.params;
     const query = "DELETE FROM enrolments WHERE course_id=?";
 
-    db.query(query, [course_id], (err, results) => {
+    db.query(query, [courseId], (err) => {
         if (err) {
             logger.error('Error deleting enrolment.\n' + err);
             return res.status(500).send("Error deleting enrolment");
@@ -151,16 +180,17 @@ exports.deleteEnrolmentByCourse = (req, res) => {
 
         res.json({
             result: "SUCCESS",
-            data: { course_id }
+            data: { courseId }
         });
     });
 }
 
 exports.deleteEnrolment = (req, res) => {
-    const { student_id, course_id } = req.validated.params;
+    const { studentId, courseId } = req.validated.params;
+    if (!ownsStudent(req, studentId)) return forbidden(res);
     const query = "DELETE FROM enrolments WHERE student_id=? AND course_id=?";
 
-    db.query(query, [student_id, course_id], (err, result) => {
+    db.query(query, [studentId, courseId], (err) => {
         if (err) {
             logger.error('Error deleting enrolment.\n' + err);
             return res.status(500).send("Error deleting enrolment");
@@ -168,7 +198,7 @@ exports.deleteEnrolment = (req, res) => {
 
         res.json({
             result: "SUCCESS",
-            data: { student_id, course_id }
+            data: { studentId, courseId }
         });
     });
 }

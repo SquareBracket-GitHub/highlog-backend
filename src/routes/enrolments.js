@@ -8,20 +8,20 @@ const validate = require("../middlewares/validate");
 router.get(
     '/',
     validate(),
-    controller.getEnrolmentsAll
+    controller.listEnrolments
 );
 
-// GET /enrolments/student/:student_id
+// GET /enrolments/student/:studentId
 router.get(
-    '/student/:student_id',
-    validate(s.studentIDSchema, "params"),
+    '/student/:studentId',
+    validate(s.studentIdParamsSchema, "params"),
     controller.getEnrolmentsByStudent
 );
 
-// GET /enrolments/course/:course_id
+// GET /enrolments/course/:courseId
 router.get(
-    '/course/:course_id',
-    validate(s.courseIDSchema, "params"),
+    '/course/:courseId',
+    validate(s.courseIdParamsSchema, "params"),
     controller.getEnrolmentsByCourse
 );
 
@@ -32,31 +32,31 @@ router.post(
     controller.createEnrolment
 );
 
-// PUT /enrolments/student/:student_id/course/:course_id
+// PUT /enrolments/student/:studentId/course/:courseId
 router.put(
-    '/student/:student_id/course/:course_id',
+    '/student/:studentId/course/:courseId',
     validate(s.enrolmentSchema, "params"),
     validate(s.enrolmentSchema, "body"),
     controller.updateEnrolment
 );
 
-// DELETE /enrolments/student/:student_id
+// DELETE /enrolments/student/:studentId
 router.delete(
-    '/student/:student_id',
-    validate(s.studentIDSchema, "params"),
+    '/student/:studentId',
+    validate(s.studentIdParamsSchema, "params"),
     controller.deleteEnrolmentByStudent
 );
 
-// DELETE /enrolments/course/:course_id
+// DELETE /enrolments/course/:courseId
 router.delete(
-    '/course/:course_id',
-    validate(s.courseIDSchema, "params"),
+    '/course/:courseId',
+    validate(s.courseIdParamsSchema, "params"),
     controller.deleteEnrolmentByCourse
 );
 
-// DELETE /enrolments/student/:student_id/course/:course_id
+// DELETE /enrolments/student/:studentId/course/:courseId
 router.delete(
-    '/student/:student_id/course/:course_id',
+    '/student/:studentId/course/:courseId',
     validate(s.enrolmentSchema, "params"),
     controller.deleteEnrolment
 );

@@ -13,15 +13,23 @@ app.get("/", (req, res) => {
     res.send("Hello. This is the backend of Highlog.");
 });
 
+const authenticate = require("./middlewares/authenticate");
+const authRoutes = require("./routes/auth");
+app.use("/api/auth", authRoutes);
+
 const studentsRoutes = require("./routes/students");
-app.use("/students", studentsRoutes);
+app.use("/api/students", authenticate, studentsRoutes);
 
 const coursesRoutes = require("./routes/courses");
-app.use('/courses', coursesRoutes);
+app.use('/api/courses', authenticate, coursesRoutes);
 
 const enrolmentsRoutes = require("./routes/enrolments");
-app.use('/enrolments', enrolmentsRoutes);
+app.use('/api/enrolments', authenticate, enrolmentsRoutes);
 
-app.listen(process.env.BACKEND_PORT, () => {
-    logger.info(`Server is running on port ${process.env.BACKEND_PORT}!`)
+const classTimetablesRoutes = require("./routes/classTimetables");
+app.use('/api/class-timetables', authenticate, classTimetablesRoutes);
+
+const port = process.env.BACKEND_PORT || 3000;
+app.listen(port, () => {
+    logger.info(`Server is running on port ${port}!`)
 });
