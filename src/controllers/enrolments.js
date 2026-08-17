@@ -9,9 +9,10 @@ function forbidden(res) {
     return res.status(403).json({ result: "ERROR", error: "Cannot modify another student's enrolments" });
 }
 
-const toEnrolmentDto = ({ student_id, course_id, tag }) => ({
+const toEnrolmentDto = ({ student_id, course_id, tag, source }) => ({
     studentId: student_id,
     courseId: course_id,
+    source,
     ...(tag === undefined ? {} : { tag })
 });
 
@@ -92,7 +93,9 @@ exports.createEnrolment = (req, res) => {
                 DELETE enrolments
                 FROM enrolments
                 JOIN courses ON courses.id = enrolments.course_id
-                WHERE enrolments.student_id = ? AND courses.tag = ?
+                WHERE enrolments.student_id = ?
+                  AND courses.tag = ?
+                  AND enrolments.source = 'selected'
             `;
 
             db.query(deleteSameTag, [studentId, tag], (deleteErr) => {
@@ -104,7 +107,7 @@ exports.createEnrolment = (req, res) => {
                 }
 
                 db.query(
-                    "INSERT INTO enrolments (student_id, course_id) VALUES (?, ?)",
+                    "INSERT INTO enrolments (student_id, course_id, source) VALUES (?, ?, 'selected')",
                     [studentId, courseId],
                     (insertErr) => {
                         if (insertErr) {
@@ -135,7 +138,11 @@ exports.updateEnrolment = (req, res) => {
     const { studentId, courseId } = req.validated.params;
     const { studentId: newStudentId, courseId: newCourseId } = req.validated.body;
     if (!ownsStudent(req, studentId) || !ownsStudent(req, newStudentId)) return forbidden(res);
-    const query = "UPDATE enrolments SET student_id = ?, course_id = ? WHERE student_id=? AND course_id=?";
+    const query = `
+        UPDATE enrolments
+        SET student_id = ?, course_id = ?
+        WHERE student_id = ? AND course_id = ? AND source = 'selected'
+    `;
 
     db.query(query, [newStudentId, newCourseId, studentId, courseId], (err) => {
         if (err) {
@@ -153,7 +160,7 @@ exports.updateEnrolment = (req, res) => {
 exports.deleteEnrolmentByStudent = (req, res) => {
     const { studentId } = req.validated.params;
     if (!ownsStudent(req, studentId)) return forbidden(res);
-    const query = "DELETE FROM enrolments WHERE student_id=?";
+    const query = "DELETE FROM enrolments WHERE student_id=? AND source='selected'";
 
     db.query(query, [studentId], (err) => {
         if (err) {
@@ -170,7 +177,7 @@ exports.deleteEnrolmentByStudent = (req, res) => {
 
 exports.deleteEnrolmentByCourse = (req, res) => {
     const { courseId } = req.validated.params;
-    const query = "DELETE FROM enrolments WHERE course_id=?";
+    const query = "DELETE FROM enrolments WHERE course_id=? AND source='selected'";
 
     db.query(query, [courseId], (err) => {
         if (err) {
@@ -188,7 +195,7 @@ exports.deleteEnrolmentByCourse = (req, res) => {
 exports.deleteEnrolment = (req, res) => {
     const { studentId, courseId } = req.validated.params;
     if (!ownsStudent(req, studentId)) return forbidden(res);
-    const query = "DELETE FROM enrolments WHERE student_id=? AND course_id=?";
+    const query = "DELETE FROM enrolments WHERE student_id=? AND course_id=? AND source='selected'";
 
     db.query(query, [studentId, courseId], (err) => {
         if (err) {

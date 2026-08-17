@@ -49,23 +49,77 @@ exports.getStudentById = (req, res) => {
 
 exports.createStudent = async (req, res) => {
     const { username, loginId, password, grade, classNo, schoolNumber } = req.validated.body;
-    const passwordHash = await hashPassword(password);
-    const query = "INSERT INTO students (username, login_id, password, grade, class_no, school_number) VALUES (?, ?, ?, ?, ?, ?)";
-    
-    db.query(query, [username, loginId, passwordHash, grade, classNo, schoolNumber], (err, results) => {
-        if (err) {
-            logger.error('Error creating student.\n' + err)
-            if (err.code === "ER_DUP_ENTRY") {
-                return res.status(409).json({ result: "ERROR", error: "Login ID already exists" });
-            }
+    let passwordHash;
+
+    try {
+        passwordHash = await hashPassword(password);
+    } catch (err) {
+        logger.error('Error hashing student password.\n' + err);
+        return res.status(500).json({ result: "ERROR", error: "Error creating student" });
+    }
+
+    db.beginTransaction((transactionErr) => {
+        if (transactionErr) {
+            logger.error('Error starting student transaction.\n' + transactionErr);
             return res.status(500).json({ result: "ERROR", error: "Error creating student" });
         }
 
-        const student = { id: results.insertId, username, loginId, grade, classNo, schoolNumber };
-        res.status(201).json({
-            result: "SUCCESS",
-            data: { student, token: createToken(student.id) }
-        });
+        const insertStudent = `
+            INSERT INTO students
+                (username, login_id, password, grade, class_no, school_number)
+            VALUES (?, ?, ?, ?, ?, ?)
+        `;
+
+        db.query(
+            insertStudent,
+            [username, loginId, passwordHash, grade, classNo, schoolNumber],
+            (studentErr, results) => {
+                if (studentErr) {
+                    return db.rollback(() => {
+                        logger.error('Error creating student.\n' + studentErr);
+                        if (studentErr.code === "ER_DUP_ENTRY") {
+                            return res.status(409).json({ result: "ERROR", error: "Login ID already exists" });
+                        }
+                        return res.status(500).json({ result: "ERROR", error: "Error creating student" });
+                    });
+                }
+
+                const studentId = results.insertId;
+                const enrolFixedCourses = `
+                    INSERT IGNORE INTO enrolments (student_id, course_id, source)
+                    SELECT ?, slots.course_id, 'fixed'
+                    FROM class_timetable_slots AS slots
+                    WHERE slots.grade = ?
+                      AND slots.class_no = ?
+                      AND slots.course_id IS NOT NULL
+                    GROUP BY slots.course_id
+                `;
+
+                db.query(enrolFixedCourses, [studentId, grade, classNo], (enrolmentErr) => {
+                    if (enrolmentErr) {
+                        return db.rollback(() => {
+                            logger.error('Error creating fixed enrolments.\n' + enrolmentErr);
+                            res.status(500).json({ result: "ERROR", error: "Error creating student" });
+                        });
+                    }
+
+                    db.commit((commitErr) => {
+                        if (commitErr) {
+                            return db.rollback(() => {
+                                logger.error('Error committing student transaction.\n' + commitErr);
+                                res.status(500).json({ result: "ERROR", error: "Error creating student" });
+                            });
+                        }
+
+                        const student = { id: studentId, username, loginId, grade, classNo, schoolNumber };
+                        res.status(201).json({
+                            result: "SUCCESS",
+                            data: { student, token: createToken(student.id) }
+                        });
+                    });
+                });
+            }
+        );
     });
 }
 
