@@ -8,10 +8,10 @@ exports.getMine = (req, res) => {
         FROM students
         JOIN class_timetable_slots AS slots
           ON slots.grade = students.grade
-         AND slots.class_no = students.class_no
+         AND (slots.class_no = students.class_no OR slots.class_no IS NULL)
         WHERE students.id = ?
         ORDER BY FIELD(slots.day, '월요일', '화요일', '수요일', '목요일', '금요일'),
-                 slots.period
+                 slots.period, slots.class_no IS NULL DESC
     `;
 
     db.query(query, [req.auth.studentId], (err, results) => {

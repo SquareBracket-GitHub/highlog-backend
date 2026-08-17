@@ -59,18 +59,23 @@ exports.createCourse = async (req, res) => {
 
         const tuplePlaceholders = schedules.map(() => '(?, ?)').join(', ');
         const scheduleParams = schedules.flatMap(({ day, period }) => [day, period]);
+        const classScope = isClassWide
+            ? '(class_no = ? OR class_no IS NULL)'
+            : '1 = 1';
+        const classParams = isClassWide ? [classNo] : [];
         const existingSlots = await query(
-            `SELECT id, day, period, tag, course_id
+            `SELECT id, day, period, tag, course_id, class_no
              FROM class_timetable_slots
-             WHERE grade = ? AND class_no = ?
+             WHERE grade = ? AND ${classScope}
                AND (day, period) IN (${tuplePlaceholders})
              FOR UPDATE`,
-            [grade, classNo, ...scheduleParams]
+            [grade, ...classParams, ...scheduleParams]
         );
 
         for (const slot of existingSlots) {
             const canShareSelectableSlot = !isClassWide
                 && slot.course_id === null
+                && slot.class_no === null
                 && slot.tag === normalizedTag;
             if (!canShareSelectableSlot) {
                 const conflict = new Error(`${slot.day} ${slot.period}교시는 이미 사용 중입니다.`);

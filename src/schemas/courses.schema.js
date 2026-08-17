@@ -27,7 +27,7 @@ const createCourseSchema = z.object({
         .max(30)
         .nullable(),
     grade: z.coerce.number().int().min(1).max(6),
-    classNo: z.coerce.number().int().min(1).max(30),
+    classNo: z.coerce.number().int().min(1).max(30).nullable(),
     schedules: z.array(scheduleSchema).min(1).max(30),
     color: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
     isClassWide: z.boolean()
@@ -37,6 +37,12 @@ const createCourseSchema = z.object({
     }
     if (!course.isClassWide && !course.tag) {
         context.addIssue({ code: 'custom', path: ['tag'], message: 'Selectable courses require a tag' });
+    }
+    if (course.isClassWide && course.classNo === null) {
+        context.addIssue({ code: 'custom', path: ['classNo'], message: 'Class-wide courses require a class number' });
+    }
+    if (!course.isClassWide && course.classNo !== null) {
+        context.addIssue({ code: 'custom', path: ['classNo'], message: 'Selectable courses cannot be limited to a class' });
     }
     const scheduleKeys = course.schedules.map(({ day, period }) => `${day}-${period}`);
     if (new Set(scheduleKeys).size !== scheduleKeys.length) {
