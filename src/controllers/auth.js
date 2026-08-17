@@ -3,20 +3,21 @@ const logger = require("../utils/logger");
 const { hashPassword, verifyPassword } = require("../utils/password");
 const { createToken } = require("../utils/token");
 
-const publicStudent = ({ id, username, login_id, grade, class_no, school_number }) => ({
+const publicStudent = ({ id, username, login_id, grade, class_no, school_number, can_manage_courses }) => ({
     id,
     username,
     loginId: login_id,
     grade,
     classNo: class_no,
-    schoolNumber: school_number
+    schoolNumber: school_number,
+    canManageCourses: Boolean(can_manage_courses)
 });
 
 exports.login = async (req, res) => {
     const { loginId, password } = req.validated.body;
 
     const query = `
-        SELECT id, username, login_id, password, grade, class_no, school_number
+        SELECT id, username, login_id, password, grade, class_no, school_number, can_manage_courses
         FROM students
         WHERE login_id = ?
         LIMIT 1
