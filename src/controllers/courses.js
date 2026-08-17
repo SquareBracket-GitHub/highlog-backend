@@ -8,142 +8,143 @@ const COURSE_COLUMNS = `
 const toCourseDto = ({
     id, title, tag, classroom, days, grade, class_no, day, period, color, is_class_wide
 }) => ({
-    id,
-    title,
-    tag,
-    classroom,
+    id, title, tag, classroom,
     days: typeof days === 'string' ? JSON.parse(days) : days,
-    grade,
-    classNo: class_no,
-    day,
-    period,
-    color,
+    grade, classNo: class_no, day, period, color,
     isClassWide: Boolean(is_class_wide)
 });
 
-exports.listCourses = (req, res) => {
-    db.query(`SELECT ${COURSE_COLUMNS} FROM courses`, (err, results) => {
-        if (err) {
-            logger.error('Error fetching courses.\n' + err);
-            return res.status(500).json({ result: 'ERROR', error: 'Error fetching courses' });
-        }
+const query = (sql, params = []) => new Promise((resolve, reject) => {
+    db.query(sql, params, (err, result) => err ? reject(err) : resolve(result));
+});
+const beginTransaction = () => new Promise((resolve, reject) => {
+    db.beginTransaction((err) => err ? reject(err) : resolve());
+});
+const commit = () => new Promise((resolve, reject) => {
+    db.commit((err) => err ? reject(err) : resolve());
+});
+const rollback = () => new Promise((resolve) => db.rollback(resolve));
+
+exports.listCourses = async (_req, res) => {
+    try {
+        const results = await query(`SELECT ${COURSE_COLUMNS} FROM courses`);
         return res.json({ result: 'SUCCESS', data: results.map(toCourseDto) });
-    });
+    } catch (err) {
+        logger.error('Error fetching courses.\n' + err);
+        return res.status(500).json({ result: 'ERROR', error: 'Error fetching courses' });
+    }
 };
 
-exports.getCourseById = (req, res) => {
-    db.query(
-        `SELECT ${COURSE_COLUMNS} FROM courses WHERE id = ?`,
-        [req.validated.params.id],
-        (err, results) => {
-            if (err) {
-                logger.error('Error fetching course.\n' + err);
-                return res.status(500).json({ result: 'ERROR', error: 'Error fetching course' });
-            }
-            return res.json({ result: 'SUCCESS', data: results[0] ? toCourseDto(results[0]) : null });
-        }
-    );
+exports.getCourseById = async (req, res) => {
+    try {
+        const results = await query(
+            `SELECT ${COURSE_COLUMNS} FROM courses WHERE id = ?`,
+            [req.validated.params.id]
+        );
+        return res.json({ result: 'SUCCESS', data: results[0] ? toCourseDto(results[0]) : null });
+    } catch (err) {
+        logger.error('Error fetching course.\n' + err);
+        return res.status(500).json({ result: 'ERROR', error: 'Error fetching course' });
+    }
 };
 
-function rollbackWithError(res, err, status = 500, message = 'Error creating course') {
-    db.rollback(() => {
-        logger.error(message + '.\n' + err);
-        res.status(status).json({ result: 'ERROR', error: message });
-    });
-}
-
-exports.createCourse = (req, res) => {
-    const { title, tag, classroom, grade, classNo, day, period, color, isClassWide } = req.validated.body;
+exports.createCourse = async (req, res) => {
+    const { title, tag, classroom, grade, classNo, schedules, color, isClassWide } = req.validated.body;
     const normalizedTag = isClassWide ? null : tag;
-    const days = [{ day, period }];
+    let transactionStarted = false;
 
-    db.beginTransaction((transactionErr) => {
-        if (transactionErr) return rollbackWithError(res, transactionErr);
+    try {
+        await beginTransaction();
+        transactionStarted = true;
 
-        const findSlot = `
-            SELECT id, tag, course_id
-            FROM class_timetable_slots
-            WHERE grade = ? AND class_no = ? AND day = ? AND period = ?
-            LIMIT 1
-        `;
-        db.query(findSlot, [grade, classNo, day, period], (slotErr, slots) => {
-            if (slotErr) return rollbackWithError(res, slotErr);
+        const tuplePlaceholders = schedules.map(() => '(?, ?)').join(', ');
+        const scheduleParams = schedules.flatMap(({ day, period }) => [day, period]);
+        const existingSlots = await query(
+            `SELECT id, day, period, tag, course_id
+             FROM class_timetable_slots
+             WHERE grade = ? AND class_no = ?
+               AND (day, period) IN (${tuplePlaceholders})
+             FOR UPDATE`,
+            [grade, classNo, ...scheduleParams]
+        );
 
-            const existingSlot = slots[0];
+        for (const slot of existingSlots) {
             const canShareSelectableSlot = !isClassWide
-                && existingSlot
-                && existingSlot.course_id === null
-                && existingSlot.tag === normalizedTag;
-            if (existingSlot && !canShareSelectableSlot) {
-                return rollbackWithError(res, 'Timetable slot already occupied', 409, '해당 요일과 교시는 이미 사용 중입니다');
+                && slot.course_id === null
+                && slot.tag === normalizedTag;
+            if (!canShareSelectableSlot) {
+                const conflict = new Error(`${slot.day} ${slot.period}교시는 이미 사용 중입니다.`);
+                conflict.status = 409;
+                throw conflict;
             }
+        }
 
-            const insertCourse = `
-                INSERT INTO courses
-                    (title, tag, classroom, days, grade, class_no, day, period, color, is_class_wide)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            `;
-            db.query(
-                insertCourse,
-                [title, normalizedTag, classroom, JSON.stringify(days), grade, classNo, day, period, color, isClassWide],
-                (courseErr, courseResult) => {
-                    if (courseErr) return rollbackWithError(res, courseErr);
-                    const courseId = courseResult.insertId;
+        const firstSchedule = schedules[0];
+        const courseResult = await query(
+            `INSERT INTO courses
+                (title, tag, classroom, days, grade, class_no, day, period, color, is_class_wide)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+                title, normalizedTag, classroom, JSON.stringify(schedules), grade, classNo,
+                firstSchedule.day, firstSchedule.period, color, isClassWide
+            ]
+        );
+        const courseId = courseResult.insertId;
 
-                    const finish = () => db.commit((commitErr) => {
-                        if (commitErr) return rollbackWithError(res, commitErr);
-                        return res.status(201).json({
-                            result: 'SUCCESS',
-                            data: {
-                                id: courseId, title, tag: normalizedTag, classroom, days,
-                                grade, classNo, day, period, color, isClassWide
-                            }
-                        });
-                    });
-
-                    const enrolClass = () => {
-                        if (!isClassWide) return finish();
-                        const enrolQuery = `
-                            INSERT IGNORE INTO enrolments (student_id, course_id, source)
-                            SELECT id, ?, 'fixed' FROM students WHERE grade = ? AND class_no = ?
-                        `;
-                        db.query(enrolQuery, [courseId, grade, classNo], (enrolErr) => {
-                            if (enrolErr) return rollbackWithError(res, enrolErr);
-                            finish();
-                        });
-                    };
-
-                    if (canShareSelectableSlot) return enrolClass();
-                    const insertSlot = `
-                        INSERT INTO class_timetable_slots
-                            (grade, class_no, day, period, label, tag, course_id)
-                        VALUES (?, ?, ?, ?, ?, ?, ?)
-                    `;
-                    db.query(
-                        insertSlot,
-                        [grade, classNo, day, period, title, normalizedTag, isClassWide ? courseId : null],
-                        (insertSlotErr) => {
-                            if (insertSlotErr) return rollbackWithError(res, insertSlotErr);
-                            enrolClass();
-                        }
-                    );
-                }
+        const existingKeys = new Set(existingSlots.map(({ day, period }) => `${day}-${period}`));
+        for (const schedule of schedules) {
+            if (existingKeys.has(`${schedule.day}-${schedule.period}`)) continue;
+            await query(
+                `INSERT INTO class_timetable_slots
+                    (grade, class_no, day, period, label, tag, course_id)
+                 VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                [
+                    grade, classNo, schedule.day, schedule.period, title,
+                    normalizedTag, isClassWide ? courseId : null
+                ]
             );
+        }
+
+        if (isClassWide) {
+            await query(
+                `INSERT IGNORE INTO enrolments (student_id, course_id, source)
+                 SELECT id, ?, 'fixed' FROM students WHERE grade = ? AND class_no = ?`,
+                [courseId, grade, classNo]
+            );
+        }
+
+        await commit();
+        transactionStarted = false;
+        return res.status(201).json({
+            result: 'SUCCESS',
+            data: {
+                id: courseId, title, tag: normalizedTag, classroom, days: schedules,
+                grade, classNo, day: firstSchedule.day, period: firstSchedule.period,
+                color, isClassWide
+            }
         });
-    });
+    } catch (err) {
+        if (transactionStarted) await rollback();
+        logger.error('Error creating course.\n' + err);
+        const duplicateSlot = err.code === 'ER_DUP_ENTRY';
+        return res.status(err.status || (duplicateSlot ? 409 : 500)).json({
+            result: 'ERROR',
+            error: err.message || 'Error creating course'
+        });
+    }
 };
 
 exports.updateCourse = (_req, res) => res.status(501).json({
     result: 'ERROR', error: 'Course update is not supported yet'
 });
 
-exports.deleteCourse = (req, res) => {
+exports.deleteCourse = async (req, res) => {
     const { id } = req.validated.params;
-    db.query('DELETE FROM courses WHERE id = ?', [id], (err) => {
-        if (err) {
-            logger.error('Error deleting course.\n' + err);
-            return res.status(500).json({ result: 'ERROR', error: 'Error deleting course' });
-        }
+    try {
+        await query('DELETE FROM courses WHERE id = ?', [id]);
         return res.json({ result: 'SUCCESS', data: { id: Number(id) } });
-    });
+    } catch (err) {
+        logger.error('Error deleting course.\n' + err);
+        return res.status(500).json({ result: 'ERROR', error: 'Error deleting course' });
+    }
 };

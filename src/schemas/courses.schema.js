@@ -7,6 +7,10 @@ const courseIdParamsSchema = z.object({
 });
 
 const DAYS = ['월요일', '화요일', '수요일', '목요일', '금요일'];
+const scheduleSchema = z.object({
+    day: z.enum(DAYS),
+    period: z.coerce.number().int().min(1).max(12)
+});
 
 const createCourseSchema = z.object({
     title: z
@@ -24,8 +28,7 @@ const createCourseSchema = z.object({
         .nullable(),
     grade: z.coerce.number().int().min(1).max(6),
     classNo: z.coerce.number().int().min(1).max(30),
-    day: z.enum(DAYS),
-    period: z.coerce.number().int().min(1).max(12),
+    schedules: z.array(scheduleSchema).min(1).max(30),
     color: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
     isClassWide: z.boolean()
 }).superRefine((course, context) => {
@@ -34,6 +37,10 @@ const createCourseSchema = z.object({
     }
     if (!course.isClassWide && !course.tag) {
         context.addIssue({ code: 'custom', path: ['tag'], message: 'Selectable courses require a tag' });
+    }
+    const scheduleKeys = course.schedules.map(({ day, period }) => `${day}-${period}`);
+    if (new Set(scheduleKeys).size !== scheduleKeys.length) {
+        context.addIssue({ code: 'custom', path: ['schedules'], message: 'Duplicate schedules are not allowed' });
     }
 });
 
