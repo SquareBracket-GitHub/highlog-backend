@@ -51,6 +51,9 @@ const createCourseSchema = z.object({
 });
 
 const updateCourseSchema = createCourseSchema;
+const conflictCheckSchema = createCourseSchema.safeExtend({
+    excludeCourseId: z.coerce.number().int().positive().optional()
+});
 
 const deleteCourseSchema = z.object({
     id: z
@@ -62,5 +65,6 @@ module.exports = {
     courseIdParamsSchema,
     createCourseSchema,
     updateCourseSchema,
+    conflictCheckSchema,
     deleteCourseSchema
 }

@@ -12,12 +12,17 @@ router.get(
     controller.listCourses
 );
 
+router.get('/mine', requireCourseManager, controller.listMine);
+router.post('/conflicts', requireCourseManager, validate(s.conflictCheckSchema, 'body'), controller.checkConflicts);
+
 // GET /courses/:id
 router.get(
     '/:id',
     validate(s.courseIdParamsSchema, "params"),
     controller.getCourseById
 );
+
+router.get('/:id/impact', requireCourseManager, validate(s.courseIdParamsSchema, 'params'), controller.getImpact);
 
 // POST /courses
 router.post(
