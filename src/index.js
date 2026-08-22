@@ -1,4 +1,5 @@
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: [path.resolve(__dirname, '../../.env'), path.resolve(__dirname, '../.env')] });
 
 const express = require('express');
 const cors = require('cors');
@@ -31,6 +32,9 @@ app.use('/api/class-timetables', authenticate, classTimetablesRoutes);
 
 const personalTimetablesRoutes = require("./routes/personalTimetables");
 app.use('/api/personal-timetables', authenticate, personalTimetablesRoutes);
+
+const mealsRoutes = require('./routes/meals');
+app.use('/api/meals', authenticate, mealsRoutes);
 
 const port = process.env.BACKEND_PORT || 3000;
 app.listen(port, () => {
