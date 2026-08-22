@@ -45,6 +45,9 @@ app.use('/api/legal', authenticate, legalRoutes);
 const boardMembershipRoutes = require('./routes/boardMemberships');
 app.use('/api/board-memberships', authenticate, boardMembershipRoutes);
 
+const inquiryRoutes = require('./routes/inquiries');
+app.use('/api/inquiries', authenticate, inquiryRoutes);
+
 const port = process.env.BACKEND_PORT || 3000;
 app.listen(port, () => {
     logger.info(`Server is running on port ${port}!`)
