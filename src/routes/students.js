@@ -4,6 +4,7 @@ const controller = require("../controllers/students");
 const validate = require("../middlewares/validate");
 const s = require("../schemas/students.schema");
 const logger = require("../utils/logger");
+const requireAdmin = require('../middlewares/requireAdmin');
 
 logger.debug('validate is ' + typeof validate);
 logger.debug('controller.listStudents is ' + typeof controller.listStudents);
@@ -11,6 +12,7 @@ logger.debug('controller.listStudents is ' + typeof controller.listStudents);
 // GET /students
 router.get(
     '/',
+    requireAdmin,
     validate(),
     controller.listStudents
 );

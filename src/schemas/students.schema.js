@@ -31,7 +31,13 @@ const createStudentSchema = z.object({
     schoolNumber: z
         .coerce.number()
         .int()
-        .min(1)
+        .min(1),
+    agreements: z.object({
+        serviceTerms: z.literal(true),
+        privacyPolicy: z.literal(true),
+        anonymousBoardNotice: z.literal(true),
+        ageOrGuardianConfirmed: z.literal(true)
+    })
 });
 
 const updateStudentSchema = z.object({

@@ -36,6 +36,15 @@ app.use('/api/personal-timetables', authenticate, personalTimetablesRoutes);
 const mealsRoutes = require('./routes/meals');
 app.use('/api/meals', authenticate, mealsRoutes);
 
+const boardRoutes = require('./routes/board');
+app.use('/api/board', authenticate, boardRoutes);
+
+const legalRoutes = require('./routes/legal');
+app.use('/api/legal', authenticate, legalRoutes);
+
+const boardMembershipRoutes = require('./routes/boardMemberships');
+app.use('/api/board-memberships', authenticate, boardMembershipRoutes);
+
 const port = process.env.BACKEND_PORT || 3000;
 app.listen(port, () => {
     logger.info(`Server is running on port ${port}!`)

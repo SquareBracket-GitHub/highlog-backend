@@ -2,17 +2,19 @@ const db = require("../models/db");
 const logger = require("../utils/logger");
 const { hashPassword } = require("../utils/password");
 const { createToken } = require("../utils/token");
+const { REGISTRATION_TERMS_VERSION } = require('../constants/legal');
 
-const PUBLIC_COLUMNS = "id, username, login_id, grade, class_no, school_number, can_manage_courses";
+const PUBLIC_COLUMNS = "id, username, login_id, grade, class_no, school_number, can_manage_courses, is_admin";
 
-const toStudentDto = ({ id, username, login_id, grade, class_no, school_number, can_manage_courses }) => ({
+const toStudentDto = ({ id, username, login_id, grade, class_no, school_number, can_manage_courses, is_admin }) => ({
     id,
     username,
     loginId: login_id,
     grade,
     classNo: class_no,
     schoolNumber: school_number,
-    canManageCourses: Boolean(can_manage_courses)
+    canManageCourses: Boolean(can_manage_courses),
+    isAdmin: Boolean(is_admin)
 });
 
 exports.listStudents = (req, res) => {
@@ -33,9 +35,14 @@ exports.listStudents = (req, res) => {
 
 exports.getStudentById = (req, res) => {
     const id = req.validated.params.id;
-    const query = `SELECT ${PUBLIC_COLUMNS} FROM students WHERE id = ?`;
+    const query = `
+        SELECT target.${PUBLIC_COLUMNS.split(', ').join(', target.')}
+        FROM students AS target
+        JOIN students AS requester ON requester.id = ?
+        WHERE target.id = ? AND (target.id = requester.id OR requester.is_admin = TRUE)
+    `;
 
-    db.query(query, [id], (err, results) => {
+    db.query(query, [req.auth.studentId, id], (err, results) => {
         if (err) {
             logger.error('Error fetching student.\n' + err);
             return res.status(500).send("Error fetching student");
@@ -145,6 +152,25 @@ exports.createStudent = async (req, res) => {
                         });
                     }
 
+                    const insertConsents = `
+                        INSERT INTO terms_consents (student_id, consent_type, terms_version)
+                        VALUES (?, 'service_terms', ?), (?, 'privacy_policy', ?),
+                               (?, 'anonymous_board_notice', ?), (?, 'age_or_guardian', ?)
+                    `;
+                    const consentParams = [
+                        studentId, REGISTRATION_TERMS_VERSION,
+                        studentId, REGISTRATION_TERMS_VERSION,
+                        studentId, REGISTRATION_TERMS_VERSION,
+                        studentId, REGISTRATION_TERMS_VERSION
+                    ];
+                    db.query(insertConsents, consentParams, (consentErr) => {
+                    if (consentErr) {
+                        return db.rollback(() => {
+                            logger.error('Error recording registration consents.\n' + consentErr);
+                            res.status(500).json({ result: "ERROR", error: "Error creating student" });
+                        });
+                    }
+
                     db.commit((commitErr) => {
                         if (commitErr) {
                             return db.rollback(() => {
@@ -155,12 +181,14 @@ exports.createStudent = async (req, res) => {
 
                         const student = {
                             id: studentId, username, loginId, grade, classNo, schoolNumber,
-                            canManageCourses: false
+                            canManageCourses: false,
+                            isAdmin: false
                         };
                         res.status(201).json({
                             result: "SUCCESS",
                             data: { student, token: createToken(student.id) }
                         });
+                    });
                     });
                 });
             }
@@ -206,14 +234,19 @@ exports.updateStudent = (req, res) => {
 
 exports.deleteStudent = (req, res) => {
     const id = req.validated.params.id;
-    const query = "DELETE FROM students WHERE id = ?";
+    const query = `DELETE target FROM students AS target
+        JOIN students AS requester ON requester.id = ?
+        WHERE target.id = ? AND (target.id = requester.id OR requester.is_admin = TRUE)`;
     
-    db.query(query, [id], (err) => {
+    db.query(query, [req.auth.studentId, id], (err, result) => {
         if (err) {
             logger.error('Error deleting student.\n' + err);
             return res.status(500).send("Error deleting student");
         }
 
+        if (!result.affectedRows) {
+            return res.status(404).json({ result: "ERROR", error: "Student not found or forbidden" });
+        }
         res.json({
             result: "SUCCESS",
             data: { id: Number(id) }
