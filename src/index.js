@@ -29,6 +29,9 @@ app.use('/api/enrolments', authenticate, enrolmentsRoutes);
 const classTimetablesRoutes = require("./routes/classTimetables");
 app.use('/api/class-timetables', authenticate, classTimetablesRoutes);
 
+const personalTimetablesRoutes = require("./routes/personalTimetables");
+app.use('/api/personal-timetables', authenticate, personalTimetablesRoutes);
+
 const port = process.env.BACKEND_PORT || 3000;
 app.listen(port, () => {
     logger.info(`Server is running on port ${port}!`)
